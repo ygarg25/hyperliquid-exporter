@@ -3,3 +3,6 @@
 
 # Ignore hl-python-venv directory
 hl-python-venv/
+
+
+validator_alert.log
