@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from telegram import Bot
 from telegram.constants import ParseMode
 from telegram.error import TelegramError
+import html
 
 # Load .env file
 load_dotenv()
@@ -18,10 +19,11 @@ logging.basicConfig(filename='validator_alert.log', level=logging.INFO,
 async def send_telegram_alert(bot_token, chat_id, message, tags=None):
     bot = Bot(token=bot_token)
     if tags:
-        tag_string = ' '.join(tags)
+        escaped_tags = [html.escape(tag) for tag in tags]
+        tag_string = ' '.join(escaped_tags)
         message = f"{tag_string}\n\n{message}"
     try:
-        await bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.MARKDOWN)
+        await bot.send_message(chat_id=chat_id, text=message, parse_mode=ParseMode.HTML)
         logging.info("Alert sent successfully")
     except TelegramError as e:
         logging.error(f"Failed to send Telegram message: {e}")
@@ -51,6 +53,9 @@ def find_asxn_labs_data(data):
     logging.warning("ASXN LABS validator not found in the data")
     return None
 
+def parse_tags(tags_string):
+    return [tag.strip() for tag in tags_string.split(',') if tag.strip()]
+
 def main():
     logging.info("Starting validator check")
     
@@ -62,17 +67,18 @@ def main():
         logging.error("Telegram bot token or chat ID not found in .env file")
         return
 
-    # Add usernames or group tags here
-    TAGS = os.getenv('TELEGRAM_TAGS', '').split(',')
+    # Parse tags from .env file
+    TAGS = parse_tags(os.getenv('TELEGRAM_TAGS', ''))
+    logging.info(f"Parsed tags: {TAGS}")
 
     validator_data = get_validator_data()
     asxn_labs = find_asxn_labs_data(validator_data)
 
     if asxn_labs:
-        message = (f"*ASXN LABS Validator Alert:*\n"
-                   f"Is Jailed: `{asxn_labs['isJailed']}`\n"
-                   f"Stake: `{asxn_labs['stake']}`\n"
-                   f"Recent Blocks: `{asxn_labs['nRecentBlocks']}`")
+        message = (f"<b>ASXN LABS Validator Alert:</b>\n"
+                   f"Is Jailed: <code>{asxn_labs['isJailed']}</code>\n"
+                   f"Stake: <code>{asxn_labs['stake']}</code>\n"
+                   f"Recent Blocks: <code>{asxn_labs['nRecentBlocks']}</code>")
         
         asyncio.run(send_telegram_alert(BOT_TOKEN, CHAT_ID, message, TAGS))
     else:
