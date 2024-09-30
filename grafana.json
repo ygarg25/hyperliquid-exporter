@@ -173,13 +173,18 @@
               "options": {
                 "0": {
                   "color": "dark-red",
-                  "index": 1,
+                  "index": 2,
                   "text": "Stopped"
                 },
                 "1": {
                   "color": "dark-green",
                   "index": 0,
                   "text": "Running"
+                },
+                "0.5": {
+                  "color": "orange",
+                  "index": 1,
+                  "text": "Error"
                 }
               },
               "type": "value"
@@ -544,7 +549,7 @@
     {
       "gridPos": {
         "h": 5,
-        "w": 12,
+        "w": 14,
         "x": 0,
         "y": 13
       },
@@ -608,8 +613,8 @@
       },
       "gridPos": {
         "h": 5,
-        "w": 12,
-        "x": 12,
+        "w": 10,
+        "x": 14,
         "y": 13
       },
       "id": 348,
@@ -854,8 +859,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -961,8 +965,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1060,8 +1063,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1159,8 +1161,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1271,8 +1272,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1369,8 +1369,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1535,8 +1534,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1659,13 +1657,13 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-1m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Hyperliquid Node Operator Monitor",
   "uid": "e149ac6b-f518-406d-a112-bd57460b02e5",
-  "version": 9,
+  "version": 11,
   "weekStart": ""
 }

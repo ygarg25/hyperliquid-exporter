@@ -365,7 +365,35 @@ def fetch_latest_block_time():
 #             logging.error(f"Error checking node status: {e}")
 #         time.sleep(60)
 
+# def check_node_running():
+#     while True:
+#         try:
+#             # Check the status of the hyperliquid-visor service
+#             cmd = "systemctl is-active hyperliquid-visor.service"
+#             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
+#             if result.stdout.strip() == 'active':
+#                 hl_node_running.set(1)
+#                 logging.info("Node is running.")
+#             else:
+#                 hl_node_running.set(0)
+#                 logging.warning("Node is not running!")
+                
+#                 # Attempt to restart the service
+#                 restart_cmd = "sudo systemctl restart hyperliquid-visor.service"
+#                 subprocess.run(restart_cmd, shell=True)
+#                 logging.info("Attempting to restart the node.")
+#         except Exception as e:
+#             logging.error(f"Error checking node status: {e}")
+#             hl_node_running.set(0)  # Assume node is not running if there's an error
+#         time.sleep(60)
+
 def check_node_running():
+    """
+    This function monitors the status of the hyperliquid-visor service using systemctl. 
+    If the service is not running, it attempts to restart the service. 
+    It also monitors the service logs for warnings and errors.
+    """
     while True:
         try:
             # Check the status of the hyperliquid-visor service
@@ -375,17 +403,39 @@ def check_node_running():
             if result.stdout.strip() == 'active':
                 hl_node_running.set(1)
                 logging.info("Node is running.")
+
+                # Capture and check logs for warnings or errors using journalctl
+                log_cmd = "journalctl -u hyperliquid-visor.service --since '5 minutes ago' --no-pager | grep -iE 'error'"
+                # log_cmd = "journalctl -u hyperliquid-visor.service --since '5 minutes ago' --no-pager | grep -iE 'warn|error'"
+                log_result = subprocess.run(log_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                
+                if log_result.stdout:
+                    # Log any warning or error messages from the service
+                    logging.warning(f"Service warnings/errors detected: {log_result.stdout.strip()}")
+                    
+                    # Optionally, set a metric for warning/error detection
+                    hl_node_running.set(0.5)  # Custom value indicating warnings/errors in the logs
+                else:
+                    logging.info("No warnings or errors detected in the logs.")
+                    
             else:
                 hl_node_running.set(0)
                 logging.warning("Node is not running!")
-                
+
                 # Attempt to restart the service
                 restart_cmd = "sudo systemctl restart hyperliquid-visor.service"
-                subprocess.run(restart_cmd, shell=True)
-                logging.info("Attempting to restart the node.")
+                restart_result = subprocess.run(restart_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+                if restart_result.returncode == 0:
+                    logging.info("Node restarted successfully.")
+                else:
+                    logging.error(f"Failed to restart node: {restart_result.stderr}")
+
         except Exception as e:
-            logging.error(f"Error checking node status: {e}")
+            logging.error(f"Error checking node status or logs: {e}")
             hl_node_running.set(0)  # Assume node is not running if there's an error
+        
+        # Sleep for 60 seconds before checking again
         time.sleep(60)
 
 def update_monitor_script_status():
