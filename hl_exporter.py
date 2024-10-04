@@ -20,12 +20,21 @@ if not NODE_HOME:
     NODE_HOME = os.path.expanduser('~')
 NODE_BINARY = os.getenv('NODE_BINARY')
 if not NODE_BINARY:
-    NODE_BINARY = os.path.expanduser('~/hl-visor')
+    NODE_BINARY = os.path.expanduser('~/hl-node')
+VISOR_BINARY = os.getenv('VISOR_BINARY')
+if not VISOR_BINARY:
+    VISOR_BINARY = os.path.expanduser('~/hl-visor')
 IS_VALIDATOR = os.getenv('IS_VALIDATOR', 'false').lower() == 'true'
 VALIDATOR_ADDRESS = os.getenv('VALIDATOR_ADDRESS', '')
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='hl_exporter.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# New Prometheus metrics for validator data
+hl_validator_stake = Gauge('hl_validator_stake', 'Amount of stake for the validator')
+hl_validator_recent_blocks = Gauge('hl_validator_recent_blocks', 'Number of recent blocks proposed by the validator')
+hl_validator_jailed = Gauge('hl_validator_jailed', 'Jailed status of the validator')
+hl_validator_info = Info('hl_validator_info', 'Information about the validator (address and name)')
 
 # Prometheus metrics
 hl_proposer_counter = Counter('hl_proposer_count', 'Count of proposals by proposer', ['proposer'])
@@ -33,8 +42,11 @@ hl_block_height_gauge = Gauge('hl_block_height', 'Block height from latest block
 hl_apply_duration_gauge = Gauge('hl_apply_duration', 'Apply duration from latest block time file')
 hl_validator_jailed_status = Gauge('hl_validator_jailed_status', 'Jailed status of validators', ['validator', 'name'])
 hl_validator_count_gauge = Gauge('hl_validator_count', 'Total number of validators')
-hl_software_version_info = Info('hl_software_version', 'Software version information')
-hl_software_up_to_date = Gauge('hl_software_up_to_date', 'Indicates if the current software is up to date (1) or not (0)')
+hl_visor_version_info = Info('hl_visor_version', 'Visor version information')
+hl_node_version_info = Info('hl_node_version_info', 'Node version information')
+hl_visor_latest_version_info = Info('hl_visor_latest_version_info', 'Visor Latest version information')
+hl_visor_software_up_to_date = Gauge('hl_visor_software_up_to_date', 'Indicates if the current software is up to date (1) or not (0)')
+hl_node_up_to_date = Gauge('hl_node_up_to_date', 'Indicates if the current node software is up to date (1) or not (0)')
 hl_cpu_usage = Gauge('hl_cpu_usage', 'CPU usage percentage')
 hl_memory_usage = Gauge('hl_memory_usage', 'Memory usage percentage')
 hl_disk_usage = Gauge('hl_disk_usage', 'Disk usage percentage')
@@ -49,6 +61,8 @@ hl_oldest_block_data_age = Gauge('hl_oldest_block_data_age', 'Age of the oldest 
 
 # Global variables
 current_commit_hash = ''
+current_commit_node_date = ''
+
 validator_mapping = {}
 
 def get_latest_file(directory):
@@ -126,7 +140,12 @@ def parse_block_time_line(line):
             hl_block_height_gauge.set(int(block_height))
         if apply_duration is not None:
             hl_apply_duration_gauge.set(float(apply_duration))
-        logging.info(f"Updated metrics: height={block_height}, block_time={block_time}, apply_duration={apply_duration}")
+        if block_time is not None:
+            # Convert block_time to a Unix timestamp
+            dt = datetime.strptime(block_time, "%Y-%m-%dT%H:%M:%S.%f")
+            unix_timestamp = dt.timestamp() * 1000  # Convert to milliseconds
+            hl_latest_block_time.set(unix_timestamp)
+        logging.info(f"Updated metrics: height={block_height}, block_time={str(block_time)}, apply_duration={apply_duration}")
     except json.JSONDecodeError:
         logging.error(f"Error parsing line: {line}")
     except Exception as e:
@@ -253,8 +272,29 @@ def consensus_log_file_monitor():
         time.sleep(10)
 
 def software_version_monitor():
-    global current_commit_hash
+    global current_commit_hash, current_commit_node_date
     while True:
+        try:
+            result = subprocess.run([VISOR_BINARY, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            version_output = result.stdout.decode('utf-8').strip()
+            parts = version_output.split('|')
+            if len(parts) >= 3:
+                commit_line = parts[0]
+                date = parts[1]
+                uncommitted_status = parts[2]
+                commit_parts = commit_line.split(' ')
+                if len(commit_parts) >= 2:
+                    commit_hash = commit_parts[1]
+                else:
+                    commit_hash = ''
+                current_commit_hash = commit_hash
+                hl_visor_version_info.info({'commit': commit_hash, 'date': date})
+                logging.info(f"Updated Visor version: commit={commit_hash}, date={date}")
+            else:
+                logging.error(f"Unexpected Visor version output format: {version_output}")
+        except Exception as e:
+            logging.error(f"Error getting Visor software version: {e}")
+        
         try:
             result = subprocess.run([NODE_BINARY, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             version_output = result.stdout.decode('utf-8').strip()
@@ -268,13 +308,13 @@ def software_version_monitor():
                     commit_hash = commit_parts[1]
                 else:
                     commit_hash = ''
-                current_commit_hash = commit_hash
-                hl_software_version_info.info({'commit': commit_hash, 'date': date})
-                logging.info(f"Updated software version: commit={commit_hash}, date={date}")
+                current_commit_node_date = date
+                hl_node_version_info.info({'commit': commit_hash, 'date': date})
+                logging.info(f"Updated node version: commit={commit_hash}, date={date}")
             else:
-                logging.error(f"Unexpected version output format: {version_output}")
+                logging.error(f"Unexpected node version output format: {version_output}")
         except Exception as e:
-            logging.error(f"Error getting software version: {e}")
+            logging.error(f"Error getting node software version: {e}")
         time.sleep(60)
 
 def check_software_update():
@@ -289,24 +329,37 @@ def check_software_update():
             result = subprocess.run([local_latest_binary, '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             latest_version_output = result.stdout.decode('utf-8').strip()
             parts = latest_version_output.split('|')
+            logging.info(f"latest Visor binary output: {latest_version_output}")
+
             if len(parts) >= 3:
                 commit_line = parts[0]
                 latest_date = parts[1]
                 uncommitted_status = parts[2]
                 commit_parts = commit_line.split(' ')
+                logging.info(f"latest Visor binary output part: {parts}")
                 if len(commit_parts) >= 2:
                     latest_commit_hash = commit_parts[1]
                 else:
                     latest_commit_hash = ''
+                hl_visor_latest_version_info.info({'commit': latest_commit_hash, 'date': latest_date})
                 if current_commit_hash == '':
                     logging.warning("Current commit hash is not available yet.")
                 else:
                     if current_commit_hash == latest_commit_hash:
-                        hl_software_up_to_date.set(1)
-                        logging.info("Software is up to date.")
+                        hl_visor_software_up_to_date.set(1)
+                        logging.info("Visor Software is up to date.")
                     else:
-                        hl_software_up_to_date.set(0)
-                        logging.info("Software is NOT up to date.")
+                        hl_visor_software_up_to_date.set(0)
+                        logging.info("Visor Software is NOT up to date.")
+                if current_commit_node_date == '':
+                    logging.warning("latest date is not available yet.")
+                else:
+                    if current_commit_node_date == latest_date:
+                        hl_node_up_to_date.set(1)
+                        logging.info("Node Software is up to date.")
+                    else:
+                        hl_node_up_to_date.set(0)
+                        logging.info("Node Software is NOT up to date.")
             else:
                 logging.error(f"Unexpected latest version output format: {latest_version_output}")
         except Exception as e:
@@ -336,16 +389,16 @@ def fetch_peer_count():
             logging.error(f"Error fetching peer count: {e}")
         time.sleep(300)
 
-def fetch_latest_block_time():
-    while True:
-        try:
-            # Assuming there's an API endpoint to get the latest block
-            response = requests.get('http://localhost:8545/latest_block')
-            block_time = response.json()['timestamp']
-            hl_latest_block_time.set(block_time)
-        except Exception as e:
-            logging.error(f"Error fetching latest block time: {e}")
-        time.sleep(60)
+# def fetch_latest_block_time():
+#     while True:
+#         try:
+#             # Assuming there's an API endpoint to get the latest block
+#             response = requests.get('http://localhost:8545/latest_block')
+#             block_time = response.json()['timestamp']
+#             hl_latest_block_time.set(block_time)
+#         except Exception as e:
+#             logging.error(f"Error fetching latest block time: {e}")
+#         time.sleep(60)
 
 # def check_node_running():
 #     while True:
@@ -466,6 +519,48 @@ def check_oldest_data():
             logging.error(f"Error checking oldest data: {e}")
         time.sleep(3600)
 
+def update_validator_metrics():
+    while True:
+        try:
+            logging.info("Fetching validator summaries...")
+            url = 'https://api.hyperliquid-testnet.xyz/info'
+            headers = {'Content-Type': 'application/json'}
+            data = json.dumps({"type": "validatorSummaries"})
+            response = requests.post(url, headers=headers, data=data, timeout=10)
+            response.raise_for_status()
+            validator_summaries = response.json()
+
+            # Iterate through the validators to find the one with name "ASXN LABS"
+            for validator in validator_summaries:
+                if validator['name'] == 'ASXN LABS':
+                    # Extract the desired information
+                    stake = validator['stake']
+                    is_jailed = validator['isJailed']
+                    n_recent_blocks = validator['nRecentBlocks']
+                    validator_address = validator['validator']
+                    validator_name = validator['name']
+
+                    # Update Prometheus metrics
+                    hl_validator_stake.set(stake)
+                    hl_validator_recent_blocks.set(n_recent_blocks)
+                    hl_validator_jailed.set(1 if is_jailed else 0)
+                    hl_validator_info.info({
+                        'address': validator_address,
+                        'name': validator_name
+                    })
+
+                    # Log the updated values
+                    logging.info(f"Updated metrics for ASXN LABS: "
+                                 f"Stake={stake}, "
+                                 f"Is Jailed={'Yes' if is_jailed else 'No'}, "
+                                 f"Recent Blocks Proposed={n_recent_blocks}, "
+                                 f"Address={validator_address}")
+                    break
+        except Exception as e:
+            logging.error(f"Error fetching validator metrics: {e}")
+        time.sleep(60)  # Fetch every 1 minutes
+
+
 if __name__ == "__main__":
     # Start Prometheus HTTP server on port 8086
     logging.info("Starting Prometheus HTTP server on port 8086")
@@ -476,12 +571,13 @@ if __name__ == "__main__":
     threads = [
         (proposal_count_monitor, "proposal count monitoring"),
         (block_time_monitor, "block time monitoring"),
+        (update_validator_metrics, "validator metrics updater"),
         (update_validator_mapping, "validator mapping updater"),
         (software_version_monitor, "software version monitoring"),
         (check_software_update, "software update checking"),
         (monitor_system_resources, "system resource monitoring"),
         (fetch_peer_count, "peer count monitoring"),
-        (fetch_latest_block_time, "latest block time monitoring"),
+        # (fetch_latest_block_time, "latest block time monitoring"),
         (check_node_running, "node status monitoring"),
         (update_monitor_script_status, "monitor script status"),
         (check_oldest_data, "oldest data monitoring")

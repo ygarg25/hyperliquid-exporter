@@ -79,12 +79,255 @@
   "links": [],
   "panels": [
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 17,
+        "x": 0,
+        "y": 0
+      },
+      "id": 368,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<div style=\"color: #00FF00; font-size: 24px; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);\">\n  <strong>$validator_name: $validator_address</span>\n</div>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "11.2.0",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "green",
+                  "index": 0,
+                  "text": "Active "
+                },
+                "1": {
+                  "color": "red",
+                  "index": 1,
+                  "text": "Jailed"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 2
+      },
+      "id": 369,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_HYPERLIQUID_METRICS}"
+          },
+          "editorMode": "code",
+          "expr": "hl_validator_jailed",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Validator Status",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 6,
+        "y": 2
+      },
+      "id": 370,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_HYPERLIQUID_METRICS}"
+          },
+          "editorMode": "code",
+          "expr": "hl_validator_recent_blocks",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Block Proposed",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 11,
+        "y": 2
+      },
+      "id": 371,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_HYPERLIQUID_METRICS}"
+          },
+          "editorMode": "code",
+          "expr": "hl_validator_stake/100000",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Amount Staked",
+      "type": "stat"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "id": 366,
       "panels": [],
@@ -116,10 +359,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
+        "h": 4,
+        "w": 6,
         "x": 0,
-        "y": 1
+        "y": 7
       },
       "id": 364,
       "options": {
@@ -203,10 +446,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 8,
-        "y": 1
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 7
       },
       "id": 365,
       "options": {
@@ -265,7 +508,7 @@
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 5.1
               }
             ]
           },
@@ -274,10 +517,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 16,
-        "y": 1
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 7
       },
       "id": 367,
       "options": {
@@ -316,11 +559,78 @@
       "type": "stat"
     },
     {
+      "datasource": {
+        "default": false,
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "Date & Time | YYYY-MM-DD HH:mm:ss"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 7
+      },
+      "id": 372,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^Time$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_HYPERLIQUID_METRICS}"
+          },
+          "editorMode": "code",
+          "expr": "hl_latest_block_time",
+          "instant": false,
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Latest Block Time",
+      "type": "stat"
+    },
+    {
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 11
       },
       "id": 363,
       "title": "System Metrics",
@@ -356,10 +666,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 0,
-        "y": 7
+        "y": 12
       },
       "id": 361,
       "options": {
@@ -425,10 +735,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 8,
-        "y": 7
+        "y": 12
       },
       "id": 360,
       "options": {
@@ -494,10 +804,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 8,
         "x": 16,
-        "y": 7
+        "y": 12
       },
       "id": 362,
       "options": {
@@ -539,7 +849,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 16
       },
       "id": 356,
       "panels": [],
@@ -548,23 +858,23 @@
     },
     {
       "gridPos": {
-        "h": 5,
-        "w": 14,
+        "h": 3,
+        "w": 8,
         "x": 0,
-        "y": 13
+        "y": 17
       },
-      "id": 355,
+      "id": 373,
       "options": {
         "code": {
           "language": "html",
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<div style=\"background-color: #222; padding: 15px; border-radius: 10px; color: #00FF00; font-size: 24px; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);\">\n  <strong>Commit Hash:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit</span><br/>\n  <strong>Date:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit_date</span>\n</div>\n",
+        "content": "<!-- <div style=\"background-color: #222; padding: 15px; border-radius: 10px; color: #00FF00; font-size: 24px; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);\">\n  <strong>Commit Hash:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit</span><br/>\n  <strong>Date:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit_date</span>\n</div> -->\n\n<div style=\"padding: 5px; border-radius: 10px;\">\n  <span style=\"font-size: 14px; color: #FFDD44;\">$node_commit</span><br/>\n  <span style=\"font-size: 14px; color: #FFDD44;\">$node_commit_date</span>\n</div>\n",
         "mode": "html"
       },
       "pluginVersion": "11.2.0",
-      "title": "Current binary version",
+      "title": "Current Node binary version",
       "type": "text"
     },
     {
@@ -572,6 +882,7 @@
         "type": "prometheus",
         "uid": "${DS_HYPERLIQUID_METRICS}"
       },
+      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -612,10 +923,138 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
-        "w": 10,
-        "x": 14,
-        "y": 13
+        "h": 3,
+        "w": 8,
+        "x": 8,
+        "y": 17
+      },
+      "id": 375,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_HYPERLIQUID_METRICS}"
+          },
+          "editorMode": "code",
+          "expr": "hl_node_up_to_date",
+          "format": "time_series",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Current Node binary up-to-date status",
+      "type": "stat"
+    },
+    {
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 17
+      },
+      "id": 374,
+      "options": {
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<!-- <div style=\"background-color: #222; padding: 15px; border-radius: 10px; color: #00FF00; font-size: 24px; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);\">\n  <strong>Commit Hash:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit</span><br/>\n  <strong>Date:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit_date</span>\n</div> -->\n\n<div style=\"padding: 5px; border-radius: 10px;\">\n  <span style=\"font-size: 14px; color: #FFDD44;\">$latest_commit</span><br/>\n  <span style=\"font-size: 14px; color: #FFDD44;\">$latest_commit_date</span>\n</div>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "11.2.0",
+      "title": "Latest Visor binary version",
+      "type": "text"
+    },
+    {
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 0,
+        "y": 20
+      },
+      "id": 355,
+      "options": {
+        "code": {
+          "language": "html",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "<!-- <div style=\"background-color: #222; padding: 15px; border-radius: 10px; color: #00FF00; font-size: 24px; font-weight: bold; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);\">\n  <strong>Commit Hash:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit</span><br/>\n  <strong>Date:</strong> <span style=\"font-size: 22px; color: #FFDD44;\">$commit_date</span>\n</div> -->\n\n<div style=\"padding: 5px; border-radius: 10px;\">\n  <span style=\"font-size: 14px; color: #FFDD44;\">$commit</span><br/>\n  <span style=\"font-size: 14px; color: #FFDD44;\">$commit_date</span>\n</div>\n",
+        "mode": "html"
+      },
+      "pluginVersion": "11.2.0",
+      "title": "Current Visor binary version",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_HYPERLIQUID_METRICS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "Outdated"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "Up to Date"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red"
+              },
+              {
+                "color": "green",
+                "value": 0.5
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 8,
+        "y": 20
       },
       "id": 348,
       "options": {
@@ -642,7 +1081,8 @@
             "type": "prometheus",
             "uid": "${DS_HYPERLIQUID_METRICS}"
           },
-          "expr": "hl_software_up_to_date",
+          "editorMode": "code",
+          "expr": "hl_visor_software_up_to_date",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -650,7 +1090,7 @@
           "refId": "A"
         }
       ],
-      "title": "Current binary up-to-date status",
+      "title": "Current Visor binary up-to-date status",
       "type": "stat"
     },
     {
@@ -659,7 +1099,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 23
       },
       "id": 357,
       "panels": [],
@@ -688,8 +1128,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -717,7 +1156,7 @@
         "h": 8,
         "w": 17,
         "x": 0,
-        "y": 19
+        "y": 24
       },
       "id": 345,
       "options": {
@@ -788,8 +1227,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -805,7 +1243,7 @@
         "h": 4,
         "w": 7,
         "x": 17,
-        "y": 19
+        "y": 24
       },
       "id": 349,
       "options": {
@@ -875,7 +1313,7 @@
         "h": 4,
         "w": 7,
         "x": 17,
-        "y": 23
+        "y": 28
       },
       "id": 358,
       "options": {
@@ -981,7 +1419,7 @@
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 32
       },
       "id": 359,
       "options": {
@@ -1079,7 +1517,7 @@
         "h": 11,
         "w": 12,
         "x": 0,
-        "y": 34
+        "y": 39
       },
       "id": 346,
       "options": {
@@ -1177,7 +1615,7 @@
         "h": 11,
         "w": 12,
         "x": 12,
-        "y": 34
+        "y": 39
       },
       "id": 351,
       "options": {
@@ -1217,7 +1655,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 45
+        "y": 50
       },
       "id": 340,
       "panels": [],
@@ -1288,7 +1726,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 51
       },
       "id": 323,
       "options": {
@@ -1385,7 +1823,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 51
       },
       "id": 333,
       "options": {
@@ -1549,7 +1987,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 54
+        "y": 59
       },
       "id": 331,
       "options": {
@@ -1611,7 +2049,7 @@
           "type": "prometheus",
           "uid": "${DS_HYPERLIQUID_METRICS}"
         },
-        "definition": "label_values(hl_software_version_info,commit)",
+        "definition": "label_values(hl_visor_version_info,commit)",
         "description": "",
         "hide": 2,
         "includeAll": false,
@@ -1620,7 +2058,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(hl_software_version_info,commit)",
+          "query": "label_values(hl_visor_version_info,commit)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -1635,7 +2073,7 @@
           "type": "prometheus",
           "uid": "${DS_HYPERLIQUID_METRICS}"
         },
-        "definition": "label_values(hl_software_version_info,date)",
+        "definition": "label_values(hl_visor_version_info,date)",
         "description": "",
         "hide": 2,
         "includeAll": false,
@@ -1645,7 +2083,155 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(hl_software_version_info,date)",
+          "query": "label_values(hl_visor_version_info,date)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_validator_info_info,address)",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Validator Address",
+        "multi": false,
+        "name": "validator_address",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_validator_info_info,address)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_validator_info_info,name)",
+        "hide": 2,
+        "includeAll": false,
+        "label": "validator Name",
+        "multi": false,
+        "name": "validator_name",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_validator_info_info,name)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_node_version_info_info,date)",
+        "description": "",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Node Commit date",
+        "multi": false,
+        "name": "node_commit_date",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_node_version_info_info,date)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_node_version_info_info,commit)",
+        "description": "",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Node Commit",
+        "multi": false,
+        "name": "node_commit",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_node_version_info_info,commit)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_visor_latest_version_info_info,date)",
+        "description": "",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Latest Commit date",
+        "multi": false,
+        "name": "latest_commit_date",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_visor_latest_version_info_info,date)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${DS_HYPERLIQUID_METRICS}"
+        },
+        "definition": "label_values(hl_visor_latest_version_info_info,commit)",
+        "description": "",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Latest Commit",
+        "multi": false,
+        "name": "latest_commit",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(hl_visor_latest_version_info_info,commit)",
           "refId": "PrometheusVariableQueryEditor-VariableQuery"
         },
         "refresh": 1,
@@ -1662,8 +2248,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Hyperliquid Node Operator Monitor",
-  "uid": "e149ac6b-f518-406d-a112-bd57460b02e5",
-  "version": 11,
+  "title": "Hyperliquid Node Operator Monitor Copy",
+  "uid": "adzut5u9i1728c",
+  "version": 5,
   "weekStart": ""
 }
