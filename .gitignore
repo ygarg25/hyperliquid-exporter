@@ -8,3 +8,4 @@ hl-python-venv/
 validator_alert.log
 hl_exporter.log
 telegram_alert.log
+validator_alert_1.log
