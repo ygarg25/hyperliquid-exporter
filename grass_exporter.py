@@ -20,7 +20,7 @@ grn_health_status = Gauge('grn_health_status', 'Health status (1 for OK, 0 for n
 
 def check_health():
     try:
-        response = requests.get('https://labs.asxn.xyz/health')
+        response = requests.get('https://grassrouter.asxn.xyz/health')
         if response.status_code == 200 and response.json().get('status') == 'ok':
             return 1
         else:
