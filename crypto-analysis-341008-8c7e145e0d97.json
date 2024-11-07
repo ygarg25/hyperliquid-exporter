@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "crypto-analysis-341008",
+  "private_key_id": "8c7e145e0d973af19611afe0b85c9ffa4d84f8a9",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCKw9UMmLX3YpB+\nGivepfaXbPIdo4KXFgnx7Qnf8g/PKyCWyO5fnlzT3S8shhul55T3mO4wyKCQm60W\njGkDq1oDeH8wuhKgvecEcEPR4ZsBcElIqmSbyGriOuthLf9dRMhUVEM0KVakYshO\nwBLYnAvoE+TAwmwH2NZCnJoErx/FZXh4ytPd1MjPkzcPSdNjnklJzvo//UAGyKgD\n1vlLtigkDauViVS7/VbeDxAfNS/bcVAu8MdmY3DnJIqqkWHRc235TM3YTnwhSDnh\nBsYDRA7jDsbHJEvu03NvjOb6H9CSviF3fI3Uq0dq67sOqR8mqBQc+JLfRRQpUzWc\nFeOT88b3AgMBAAECggEAH6TS08GLVXO7oZYURPyxxAxLFikwYYXcFLhKVTBdHJAo\nKVp+yX1Si9nXpR6b9XRfCytrveIyg2eMzCSO2hBcQYhb8N+t2cwUf3WecaEx+N0D\nSTfaI5BLl3V6MboMjtddm6VvgdifcnM4XIT+hzjmmjDXLIHposx258/Qa5sH8rqA\nDKI9NoYOE8AWdbxr11z44qkeETnuv676MH5ui+X+9yLLhbwCQpHrwB72p7iTTybY\nC92J3Dsq5UiwMJnrPCjLKdruaCUznaat69SoQjB8pWYfNAuTK8fxNcJzUeaD8aoo\nb48C/OAmGriHN9SnpxOaInXrOERFChHFtX7NLwI+wQKBgQC967TJokWxAtewAmSw\ngYQAJAqiuFhLLBL6veQ3oizLSFM0TIP/SG4+3u+jY4NvZDMueiPzr82UaTbccz8f\nmVHAYDOIIHku0znd76Yq1JusJf0FPky0IIIahMQrQ58ymGlzCheEvrPrVor666zV\nPIP4ABFyP304cmoJf9qgHAviFwKBgQC7C6sAIV0HxRcHk2o0jCIO6eHcVCuYNSQP\ntVA/nBBCegalhpeaO8PhnBonFxN9+U3eyU+qqGbWtieNi5RQDvxu4Dxdu3irfDtq\nwEqgpjEMJqjPfgDEv2EA+sEtg97ZWHSb5ej1FJxVgQ25mqvbiXDYo4ojEgsEhznA\nzoGeq0CuIQKBgQCaSPk9NE5ZVm3R1p/lo9GQK7dYKVnQ96UTfWAAsgahvceaHO6+\nXCDzgjg7C4Si4UuS3jaGqLLhdffTbuxAx1Taa0xxsa/AkmfYG+9pq/4rA1FhCRNW\n4XHQCTszymNxvs8rXW9tr16KOGv/G6X0NI0g0y1ZGqqnSItL3EnG+AHPUQKBgG73\nHRuWr3pMkr0L15YVDJ+MYVI1HSfPXvVyu4kBLSRDAG5yyr3VdwABfAJ0zjuOC4SA\nKaM1BM2cgxqWFAbq3RdqMGXrMkuKCDXsnllwPujWho+SUSJn50SNfs1hznNi5ssW\nOn4rHBQd2+agvBQiFbBwVSM5MRAeqUSZPozDTDwBAoGASJ6iPew1QM9z2vlyZnKR\n9J1sTj+15L9hir1gwhTocb2JrZfJUKjO8AqIKH4TtseZXzCaASKA6d8xTcoK69eo\nBBwZBeqUNmzT8oBJveO1u2mgF5Ny/fknFSnm0R2fFkZto29bOFIqR9u340KM68fi\npQf4kGq4c9YNpc/gvB9zZko=\n-----END PRIVATE KEY-----\n",
+  "client_email": "crypto-analysis@crypto-analysis-341008.iam.gserviceaccount.com",
+  "client_id": "102107222764843398153",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/crypto-analysis%40crypto-analysis-341008.iam.gserviceaccount.com"
+}

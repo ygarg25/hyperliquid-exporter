@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+print('yes')
+
 # Get environment variables
 NODE_HOME = os.getenv('NODE_HOME')
 if not NODE_HOME:
@@ -36,6 +38,7 @@ hl_validator_recent_blocks = Gauge('hl_validator_recent_blocks', 'Number of rece
 hl_validator_jailed = Gauge('hl_validator_jailed', 'Jailed status of the validator')
 hl_validator_info = Info('hl_validator_info', 'Information about the validator (address and name)')
 
+print('yes')
 # Prometheus metrics
 hl_proposer_counter = Counter('hl_proposer_count', 'Count of proposals by proposer', ['proposer'])
 hl_block_height_gauge = Gauge('hl_block_height', 'Block height from latest block time file')
@@ -64,6 +67,8 @@ current_commit_hash = ''
 current_commit_node_date = ''
 
 validator_mapping = {}
+
+print('yes')
 
 def get_latest_file(directory):
     latest_file = None
@@ -95,6 +100,7 @@ def parse_log_line(line):
     except Exception as e:
         logging.error(f"Error processing line: {e}")
 
+print('no')
 def stream_log_file(file_path, logs_dir, from_start=False):
     logging.info(f"Streaming log file: {file_path}, from_start={from_start}")
     with open(file_path, 'r') as log_file:
@@ -214,6 +220,7 @@ def parse_consensus_log_line(line):
     global validator_mapping
     try:
         data = json.loads(line)
+        print("data", data, flush=True)
         jailed_validators = data[1][1].get('jailed_validators', [])
         round_to_stakes = data[1][1].get('execution_state', {}).get('round_to_stakes', [])
         all_validators = set()
@@ -562,6 +569,7 @@ def update_validator_metrics():
 
 
 if __name__ == "__main__":
+    print('yes')
     # Start Prometheus HTTP server on port 8086
     logging.info("Starting Prometheus HTTP server on port 8086")
     start_http_server(8086)

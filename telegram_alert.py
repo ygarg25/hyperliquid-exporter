@@ -80,7 +80,10 @@ def main():
                    f"Stake: <code>{asxn_labs['stake']}</code>\n"
                    f"Recent Blocks: <code>{asxn_labs['nRecentBlocks']}</code>")
         
-        asyncio.run(send_telegram_alert(BOT_TOKEN, CHAT_ID, message, TAGS))
+        if asxn_labs['isJailed']:
+            asyncio.run(send_telegram_alert(BOT_TOKEN, CHAT_ID, message, TAGS))
+        else:
+             logging.warning(" ASXN LABS validator is not Jailed")
     else:
         logging.warning("Unable to fetch ASXN LABS validator data")
 
