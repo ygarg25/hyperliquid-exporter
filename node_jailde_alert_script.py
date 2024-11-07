@@ -65,7 +65,7 @@ from pathlib import Path
 from typing import Tuple, Dict, Optional
 
 # Constants
-CHECK_INTERVAL = 60  # 1 minute
+CHECK_INTERVAL = 300  # 5 minute
 UNJAIL_WAIT_TIME = 1800  # 30 minutes
 API_ENDPOINT = 'https://api.hyperliquid-testnet.xyz/info'
 
