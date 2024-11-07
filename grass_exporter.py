@@ -10,13 +10,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Set up logging
-logging.basicConfig(filename='hl_exporter.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='grn_exporter.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Prometheus metrics
-hl_cpu_usage = Gauge('hl_cpu_usage', 'CPU usage percentage')
-hl_memory_usage = Gauge('hl_memory_usage', 'Memory usage percentage')
-hl_disk_usage = Gauge('hl_disk_usage', 'Disk usage percentage')
-hl_health_status = Gauge('hl_health_status', 'Health status (1 for OK, 0 for not OK)')
+grn_cpu_usage = Gauge('grn_cpu_usage', 'CPU usage percentage')
+grn_memory_usage = Gauge('grn_memory_usage', 'Memory usage percentage')
+grn_disk_usage = Gauge('grn_disk_usage', 'Disk usage percentage')
+grn_health_status = Gauge('grn_health_status', 'Health status (1 for OK, 0 for not OK)')
 
 def check_health():
     try:
@@ -31,13 +31,13 @@ def check_health():
 
 def monitor_system_resources():
     while True:
-        hl_cpu_usage.set(psutil.cpu_percent())
+        grn_cpu_usage.set(psutil.cpu_percent())
         memory = psutil.virtual_memory()
-        hl_memory_usage.set(memory.percent)
+        grn_memory_usage.set(memory.percent)
         disk = psutil.disk_usage('/')
-        hl_disk_usage.set(disk.percent)
+        grn_disk_usage.set(disk.percent)
         health_status = check_health()
-        hl_health_status.set(health_status)
+        grn_health_status.set(health_status)
         logging.info(f"Updated metrics - CPU: {psutil.cpu_percent()}%, Memory: {memory.percent}%, Disk: {disk.percent}%, Health: {health_status}")
         time.sleep(60)
 
