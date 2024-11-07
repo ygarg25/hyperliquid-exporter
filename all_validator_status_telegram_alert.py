@@ -9,13 +9,49 @@ from telegram.constants import ParseMode
 from telegram.error import TelegramError
 import html
 import re
+from logging.handlers import RotatingFileHandler
+from datetime import datetime
 
-# Load .env file
+# Load .env file and create logs directory
 load_dotenv()
 
-# Set up logging
-logging.basicConfig(filename='validator_alert_1.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+os.makedirs('logs', exist_ok=True)
+
+# Set up logging with rotation
+def setup_logging():
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    # log_file = os.path.join('logs', f'validator_alert_{datetime.now().strftime("%Y-%m-%d")}.log')
+    log_file = os.path.join('logs', f'all_validator_alert.log')
+
+    
+    # Configure root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Remove any existing handlers to prevent duplicates
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+    
+    # Add rotating file handler
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10*1024*1024,  # 10 MB
+        backupCount=30
+    )
+    file_handler.setFormatter(log_formatter)
+    logger.addHandler(file_handler)
+    
+    # Add console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    logger.addHandler(console_handler)
+    
+    logging.info("Logging setup completed")
+
+# Initialize logging
+setup_logging()
+
 
 # Directory for mapping validators to tags
 VALIDATOR_TAG_MAPPING = {

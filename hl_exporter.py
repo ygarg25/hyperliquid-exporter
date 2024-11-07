@@ -8,13 +8,15 @@ import threading
 import psutil
 import glob
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from prometheus_client import start_http_server, Counter, Gauge, Info
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-print('yes')
+# Create logs directory
+os.makedirs('logs', exist_ok=True)
 
 # Get environment variables
 NODE_HOME = os.getenv('NODE_HOME')
@@ -29,8 +31,40 @@ if not VISOR_BINARY:
 IS_VALIDATOR = os.getenv('IS_VALIDATOR', 'false').lower() == 'true'
 VALIDATOR_ADDRESS = os.getenv('VALIDATOR_ADDRESS', '')
 
-# Set up logging
-logging.basicConfig(filename='hl_exporter.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up logging with rotation
+def setup_logging():
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    # log_file = os.path.join('logs', f'hl_exporter_{datetime.now().strftime("%Y-%m-%d")}.log')
+    log_file = os.path.join('logs', f'hl_exporter.log')
+    
+    # Create a rotating file handler (10 MB per file, keep 30 files)
+    file_handler = RotatingFileHandler(
+        log_file, 
+        maxBytes=10*1024*1024,  # 10 MB
+        backupCount=30
+    )
+    file_handler.setFormatter(log_formatter)
+    
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    
+    # Setup root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Remove any existing handlers
+    root_logger.handlers = []
+    
+    # Add the handlers
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    logging.info("Logging setup completed")
+
+# Initialize logging
+setup_logging()
+
 
 # New Prometheus metrics for validator data
 hl_validator_stake = Gauge('hl_validator_stake', 'Amount of stake for the validator')

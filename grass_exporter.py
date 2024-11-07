@@ -4,13 +4,48 @@ import logging
 import psutil
 import requests
 from prometheus_client import start_http_server, Gauge
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
+from datetime import datetime
 
-# Load environment variables from .env file
+# Load environment variables and create logs directory
 load_dotenv()
+os.makedirs('logs', exist_ok=True)
 
-# Set up logging
-logging.basicConfig(filename='grn_exporter.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up logging with rotation
+def setup_logging():
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    # log_file = os.path.join('logs', f'grn_exporter_{datetime.now().strftime("%Y-%m-%d")}.log')
+    log_file = os.path.join('logs', f'grn_exporter.log')
+
+    
+    # Configure root logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    
+    # Remove any existing handlers to prevent duplicates
+    if logger.handlers:
+        for handler in logger.handlers:
+            logger.removeHandler(handler)
+    
+    # Add rotating file handler
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10*1024*1024,  # 10 MB
+        backupCount=30
+    )
+    file_handler.setFormatter(log_formatter)
+    logger.addHandler(file_handler)
+    
+    # Add console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    logger.addHandler(console_handler)
+    
+    logging.info("Logging setup completed")
+
+# Initialize logging
+setup_logging()
 
 # Prometheus metrics
 grn_cpu_usage = Gauge('grn_cpu_usage', 'CPU usage percentage')

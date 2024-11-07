@@ -3,6 +3,7 @@ import requests
 import json
 import logging
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from telegram import Bot
 from telegram.constants import ParseMode
@@ -12,9 +13,35 @@ import html
 # Load .env file
 load_dotenv()
 
-# Set up logging
-logging.basicConfig(filename='validator_alert.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+# Create logs directory if it doesn't exist
+os.makedirs('logs', exist_ok=True)
+
+# Generate log filename with timestamp
+current_date = datetime.now().strftime('%Y-%m-%d')
+# log_filename = f'logs/validator_alert_{current_date}.log'
+log_filename = f'logs/telegram_alert.log'
+
+
+# Set up logging with both file and console output
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Create file handler
+file_handler = logging.FileHandler(log_filename)
+file_handler.setLevel(logging.INFO)
+
+# Create console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+
+# Create formatter
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+console_handler.setFormatter(formatter)
+
+# Add handlers to logger
+logger.addHandler(file_handler)
+logger.addHandler(console_handler)
 
 async def send_telegram_alert(bot_token, chat_id, message, tags=None):
     bot = Bot(token=bot_token)
@@ -83,7 +110,7 @@ def main():
         if asxn_labs['isJailed']:
             asyncio.run(send_telegram_alert(BOT_TOKEN, CHAT_ID, message, TAGS))
         else:
-             logging.warning(" ASXN LABS validator is not Jailed")
+            logging.warning("ASXN LABS validator is not Jailed")
     else:
         logging.warning("Unable to fetch ASXN LABS validator data")
 
