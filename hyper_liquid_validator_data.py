@@ -75,7 +75,7 @@ class GoogleSheetConfig:
     parent_dir: Path
     spreadsheet_name: str
     sheet_name: str
-    auth_file: str = 'crypto-analysis-341008-8c7e145e0d97.json'
+    auth_file: str = 'crypto-analysis-341008-b75fdac731c9.json'
     
     @property
     def auth_path(self) -> Path:

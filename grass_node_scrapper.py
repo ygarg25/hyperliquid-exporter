@@ -119,11 +119,11 @@ def update_google_sheet(values, _parent_dir, _spread_sheet_name, _sheet_name):
     scope = ['https://spreadsheets.google.com/feeds',
              'https://www.googleapis.com/auth/drive']
 
-            #  /home/dfuse/hyperliquid-exporter/crypto-analysis-341008-8c7e145e0d97.json
+            #  /home/dfuse/hyperliquid-exporter/crypto-analysis-341008-b75fdac731c9.json
 
     # add credentials to the account
     google_auth_file = os.path.join(
-        _parent_dir, 'crypto-analysis-341008-8c7e145e0d97.json')
+        _parent_dir, 'crypto-analysis-341008-b75fdac731c9.json')
 
     print(google_auth_file)
 
