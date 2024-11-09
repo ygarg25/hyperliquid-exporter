@@ -111,7 +111,7 @@ Running the Script
 5. Running as Service:
    a) Create service file:
       ```bash
-      sudo nano /etc/systemd/system/hlq-sentinel.service
+      sudo nano /etc/systemd/system/hyperliquid_validator_safeguard.service
       ```
       
    b) Add content:
@@ -134,15 +134,15 @@ Running the Script
 
    c) Enable and start:
       ```bash
-      sudo systemctl enable hlq-sentinel
-      sudo systemctl start hlq-sentinel
+      sudo systemctl enable hyperliquid_validator_safeguard
+      sudo systemctl start hyperliquid_validator_safeguard
       ```
 
 Monitoring & Maintenance
 ----------------------
 1. Check Status:
    ```bash
-   sudo systemctl status hlq-sentinel
+   sudo systemctl status hyperliquid_validator_safeguard
    ```
 
 2. View Logs:
@@ -162,13 +162,13 @@ Monitoring & Maintenance
 3. Service Management:
    ```bash
    # Stop service
-   sudo systemctl stop hlq-sentinel
+   sudo systemctl stop hyperliquid_validator_safeguard
 
    # Restart service
-   sudo systemctl restart hlq-sentinel
+   sudo systemctl restart hyperliquid_validator_safeguard
 
    # Disable service
-   sudo systemctl disable hlq-sentinel
+   sudo systemctl disable hyperliquid_validator_safeguard
    ```
 
 Troubleshooting
@@ -399,25 +399,35 @@ class AlertManager:
 
     async def send_telegram_alert(self, message: str, specific: bool = False, remaining_unjail_time: Optional[int] = None):
         """Send Telegram alert to specific or general chat, with optional tags"""
+        print("sss",message)
         try:
             chat_id = self.config['telegram_chat_id_specific'] if specific else self.config['telegram_chat_id_all']
-            global_tags = ' '.join(html.escape(tag) for tag in self.config.get('telegram_tags', []))
+            # global_tags = ' '.join(html.escape(tag) for tag in self.config.get('telegram_tags', []))
             
             if specific and remaining_unjail_time is not None:
-                # Add remaining unjail time to specific validator message
-                validator_name = "ASXN LABS"  # Example placeholder
-                stake = "1001551886053"  # Example placeholder
-                recent_blocks = 0  # Example placeholder
-                message = (
-                    f"{global_tags}\n\n"
-                    f"<b>{validator_name} Validator Alert:</b>\n"
-                    f"Is Jailed: <code>True</code>\n"
-                    f"Stake: <code>{stake}</code>\n"
-                    f"Recent Blocks: <code>{recent_blocks}</code>\n"
-                    f"Time left until unjail attempt: <code>{remaining_unjail_time} minutes</code>\n"
-                )
+
+                global_tags = ' '.join(html.escape(tag) for tag in self.config.get('telegram_tags', []))
+
+                # # Add remaining unjail time to specific validator message
+                # validator_name = "ASXN LABS"  # Example placeholder
+                # stake = "1001551886053"  # Example placeholder
+                # recent_blocks = 0  # Example placeholder
+                # message = (
+                #     f"{global_tags}\n\n"
+                #     f"<b>{validator_name} Validator Alert:</b>\n"
+                #     f"Is Jailed: <code>True</code>\n"
+                #     f"Stake: <code>{stake}</code>\n"
+                #     f"Recent Blocks: <code>{recent_blocks}</code>\n"
+                #     f"Time left until unjail attempt: <code>{remaining_unjail_time} minutes</code>\n"
+                # )
+                
+                message = f"\n-----------------------------------------\n\n\n{global_tags}\n\n{message}\n\n\n-----------------------------------------\n"
             else:
-                message = f"{global_tags}\n\n{message}"
+                # global_tags = ' '.join(html.escape(tag) for tag in self.config.get('telegram_tags', []))
+            
+                # message = f"{global_tags}\n\n{message}"
+                message = f"\n-----------------------------------------\n\n\n{message}\n\n\n-----------------------------------------\n"
+
             
             await self.telegram_bot.send_message(
                 chat_id=chat_id,
@@ -488,7 +498,19 @@ class ValidatorMonitor:
         
         try:
             jail_message = f"🚨 Alert: Hyperliquid Node <b>{validator_info['name']}</b> has been jailed! Unjailing attempt will be made after {UNJAIL_WAIT_TIME // 60} minutes."
-            await self.alert_manager.send_alert(jail_message, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
+            msg = (
+                f"<b>{validator_info['name']} Validator Alert:</b>\n"
+                f"Is Jailed: <code>{validator_info['isJailed']}</code>\n"
+                f"Stake: <code>{validator_info['stake']}</code>\n"
+                f"Recent Blocks: <code>{validator_info['nRecentBlocks']}</code>\n"
+
+                f"\n\n{jail_message}\n\n"
+                f"Time left until unjail attempt: <code>{UNJAIL_WAIT_TIME // 60} minutes</code>\n"
+            )
+            
+            # await self.alert_manager.send_alert(jail_message, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
+            await self.alert_manager.send_alert(msg, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
+
             await asyncio.sleep(UNJAIL_WAIT_TIME)
             
             # Attempt to unjail the validator
@@ -732,9 +754,10 @@ async def monitor_loop(args, config, monitor, alert_manager):
                     # Start a separate task for the unjail process to avoid blocking the loop
                     asyncio.create_task(monitor.schedule_unjail(config['validator_address'], validator_info))
                 else:
+                    pass
                     # Send alerts for both specific and all validators if needed
-                    await alert_manager.send_alert("Specific validator status update", alert_type='telegram', specific=True)
-                    await alert_manager.send_alert("All validators status update", alert_type='telegram', specific=False)
+                    # await alert_manager.send_alert("Specific validator status update", alert_type='telegram', specific=True)
+                    # await alert_manager.send_alert("All validators status update", alert_type='telegram', specific=False)
 
             if mode in ['all', 'both']:
                 await check_all_validators(alert_manager)
