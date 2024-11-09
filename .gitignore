@@ -13,3 +13,4 @@ grn_exporter.log
 .env_hyper
 logs/
 .env_twillio
+.env_alert
