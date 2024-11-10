@@ -1,33 +1,62 @@
 """
     # For jailed validators only (default):
-    python script.py
+    python hyper_liquid_validator_data.py
     # or
-    python script.py --mode jailed
+    python hyper_liquid_validator_data.py --mode jailed
 
     # For all validators:
-    python script.py --mode all
+    python hyper_liquid_validator_data.py --mode all
 """
 
 import logging
 from logging.handlers import RotatingFileHandler
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 from pathlib import Path
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import requests
 from pytz import timezone, UTC
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Deque
 import json
 from dataclasses import dataclass
 from functools import wraps
 import os
 import argparse
+from collections import deque
 
 # Configuration
 API_URL = "https://api.hyperliquid-testnet.xyz/info"
 RETRY_DELAY = 23  # seconds
 MAX_RETRIES = 3
+MAX_CALLS_PER_MINUTE = 30  # Adjust based on API limits
+INITIAL_BACKOFF = 1  # seconds
+MAX_BACKOFF = 300  # seconds (5 minutes)
+DEFAULT_RETRY_AFTER = 60  # seconds
+MAX_ATTEMPTS = 3
+
+class APIRateLimiter:
+    def __init__(self, max_calls_per_minute: int = MAX_CALLS_PER_MINUTE):
+        self.calls: Deque[datetime] = deque()
+        self.max_calls = max_calls_per_minute
+        self.window = timedelta(minutes=1)
+        self.logger = logging.getLogger(__name__)
+
+    def wait_if_needed(self):
+        now = datetime.now()
+        # Remove old calls
+        while self.calls and (now - self.calls[0]) > self.window:
+            self.calls.popleft()
+        
+        # Check if we need to wait
+        if len(self.calls) >= self.max_calls:
+            wait_time = (self.calls[0] + self.window - now).total_seconds()
+            if wait_time > 0:
+                self.logger.warning(f"Rate limit approaching, waiting {wait_time:.2f} seconds")
+                time.sleep(wait_time)
+        
+        self.calls.append(now)
+        self.logger.debug(f"Current API calls in window: {len(self.calls)}")
 
 def setup_logging(mode: str):
     """Set up logging with file rotation"""
@@ -35,10 +64,8 @@ def setup_logging(mode: str):
     log_dir = Path('logs')
     log_dir.mkdir(exist_ok=True)
     
-    # Create log filename with date and mode
-    # log_file = log_dir / f'validator_collector_{mode}_{datetime.now().strftime("%Y-%m-%d")}.log'
+    # Create log filename with mode
     log_file = log_dir / f'validator_collector_{mode}.log'
-
     
     # Create formatter
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -87,16 +114,20 @@ def retry_on_exception(retries: int = MAX_RETRIES, delay: int = RETRY_DELAY):
         @wraps(func)
         def wrapper(*args, **kwargs):
             logger = logging.getLogger(__name__)
+            last_exception = None
+            
             for attempt in range(retries):
                 try:
                     return func(*args, **kwargs)
                 except Exception as e:
+                    last_exception = e
                     if attempt == retries - 1:
                         logger.error(f"All retry attempts failed for {func.__name__}: {str(e)}")
-                        raise
+                        raise last_exception
                     logger.warning(f"Attempt {attempt + 1} failed for {func.__name__}: {str(e)}")
                     logger.info(f"Retrying in {delay} seconds...")
                     time.sleep(delay)
+                    
             return None
         return wrapper
     return decorator
@@ -150,20 +181,61 @@ class HyperLiquidAPI:
     """Handles all HyperLiquid API operations"""
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
-    @retry_on_exception()
-    def fetch_validator_data(self) -> List[Dict]:
-        """Fetch validator data from HyperLiquid API"""
-        self.logger.info("Fetching validator data from API...")
-        headers = {'Content-Type': 'application/json'}
-        payload = json.dumps({"type": "validatorSummaries"})
-        
-        response = requests.post(API_URL, headers=headers, data=payload)
-        response.raise_for_status()
-        
-        data = response.json()
-        self.logger.info(f"Successfully fetched data for {len(data)} validators")
-        return data
+        self.rate_limiter = APIRateLimiter()
+        self.backoff_time = INITIAL_BACKOFF
+
+    def _handle_rate_limit(self, response: requests.Response) -> int:
+        """Handle rate limit response and return wait time"""
+        retry_after = int(response.headers.get('Retry-After', DEFAULT_RETRY_AFTER))
+        self.logger.warning(f"Rate limit hit (429). Retry after: {retry_after} seconds")
+        return retry_after
+
+    def _exponential_backoff(self) -> None:
+        """Implement exponential backoff"""
+        wait_time = min(self.backoff_time, MAX_BACKOFF)
+        self.logger.info(f"Backing off for {wait_time} seconds")
+        time.sleep(wait_time)
+        self.backoff_time *= 2
+
+    def fetch_validator_data(self) -> Optional[List[Dict]]:
+        """Fetch validator data with improved error handling and rate limiting"""
+        attempt = 0
+
+        while attempt < MAX_RETRIES:
+            try:
+                self.rate_limiter.wait_if_needed()
+                
+                self.logger.info(f"Fetching validator data (attempt {attempt + 1}/{MAX_RETRIES})")
+                headers = {'Content-Type': 'application/json'}
+                payload = json.dumps({"type": "validatorSummaries"})
+                
+                response = requests.post(API_URL, headers=headers, data=payload)
+                
+                if response.status_code == 200:
+                    self.backoff_time = INITIAL_BACKOFF  # Reset backoff on success
+                    data = response.json()
+                    self.logger.info(f"Successfully fetched data for {len(data)} validators")
+                    return data
+                
+                elif response.status_code == 429:
+                    wait_time = self._handle_rate_limit(response)
+                    time.sleep(wait_time)
+                
+                else:
+                    response.raise_for_status()
+                
+            except requests.exceptions.RequestException as e:
+                self.logger.error(f"Request failed (attempt {attempt + 1}/{MAX_RETRIES}): {str(e)}")
+                self._exponential_backoff()
+            
+            except Exception as e:
+                self.logger.error(f"Unexpected error (attempt {attempt + 1}/{MAX_RETRIES}): {str(e)}")
+                self._exponential_backoff()
+            
+            attempt += 1
+
+        self.logger.error("Max retries reached, giving up")
+        return None
 
 class DataProcessor:
     """Processes and transforms validator data"""
@@ -196,13 +268,21 @@ def hyper_liquid_data_fetch(parent_dir: Path) -> None:
         sheet_name='validator_info'
     )
     
-    while True:
+    attempt = 0
+    while attempt < MAX_ATTEMPTS:
         try:
             logger.info("Starting data fetch for all validators")
             timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
             
             api = HyperLiquidAPI()
             data = api.fetch_validator_data()
+            
+            if data is None:
+                logger.error("Failed to fetch data, will retry")
+                attempt += 1
+                time.sleep(RETRY_DELAY)
+                continue
+                
             processed_data = DataProcessor.add_timestamp(data, timestamp)
             sheet_data = DataProcessor.prepare_for_sheet(processed_data)
             
@@ -213,10 +293,14 @@ def hyper_liquid_data_fetch(parent_dir: Path) -> None:
             break
             
         except Exception as ex:
-            logger.error(f"Error in data fetch: {str(ex)}")
-            logger.info(f"Retrying in {RETRY_DELAY} seconds...")
-            time.sleep(RETRY_DELAY)
-            continue
+            attempt += 1
+            logger.error(f"Error in data fetch (attempt {attempt}/{MAX_ATTEMPTS}): {str(ex)}")
+            if attempt < MAX_ATTEMPTS:
+                logger.info(f"Retrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
+            else:
+                logger.error("Max attempts reached, giving up")
+                raise
 
 def hyper_liquid_jailed_data_fetch(parent_dir: Path) -> None:
     """Fetch and store only jailed validator data"""
@@ -227,13 +311,21 @@ def hyper_liquid_jailed_data_fetch(parent_dir: Path) -> None:
         sheet_name='jailed_info'
     )
     
-    while True:
+    attempt = 0
+    while attempt < MAX_ATTEMPTS:
         try:
             logger.info("Starting data fetch for jailed validators")
             timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
             
             api = HyperLiquidAPI()
             data = api.fetch_validator_data()
+            
+            if data is None:
+                logger.error("Failed to fetch data, will retry")
+                attempt += 1
+                time.sleep(RETRY_DELAY)
+                continue
+                
             processed_data = DataProcessor.add_timestamp(data, timestamp)
             jailed_data = DataProcessor.filter_jailed(processed_data)
             
@@ -247,10 +339,14 @@ def hyper_liquid_jailed_data_fetch(parent_dir: Path) -> None:
             break
             
         except Exception as ex:
-            logger.error(f"Error in jailed data fetch: {str(ex)}")
-            logger.info(f"Retrying in {RETRY_DELAY} seconds...")
-            time.sleep(RETRY_DELAY)
-            continue
+            attempt += 1
+            logger.error(f"Error in jailed data fetch (attempt {attempt}/{MAX_ATTEMPTS}): {str(ex)}")
+            if attempt < MAX_ATTEMPTS:
+                logger.info(f"Retrying in {RETRY_DELAY} seconds...")
+                time.sleep(RETRY_DELAY)
+            else:
+                logger.error("Max attempts reached, giving up")
+                raise
 
 def main():
     parser = argparse.ArgumentParser(description='HyperLiquid Validator Data Collection')
