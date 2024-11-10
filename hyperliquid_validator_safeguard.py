@@ -49,6 +49,9 @@ Installation Guide
       VALIDATOR_ADDRESS=your_validator_address
       PRIVATE_KEY=your_private_key
       TELEGRAM_TAGS=@late281,@ygarg25,@munehisa_asxn
+
+      SPECIFIC_ALERT_INTERVAL=900  # Interval in seconds for specific validator alerts
+      ALL_ALERT_INTERVAL=1200      # Interval in seconds for all validator alerts
       
       # Validator tag mapping (in JSON format)
       # This is used to tag specific people on alerts for each validator
