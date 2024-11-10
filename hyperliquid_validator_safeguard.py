@@ -340,7 +340,11 @@ class ConfigLoader:
             'twilio_sid': os.getenv('TWILIO_ACCOUNT_SID'),
             'twilio_token': os.getenv('TWILIO_AUTH_TOKEN'),
             'twilio_from': os.getenv('TWILIO_FROM_NUMBER'),
-            'phone_numbers': os.getenv('ALERT_PHONE_NUMBERS', '').split(',')
+            'phone_numbers': os.getenv('ALERT_PHONE_NUMBERS', '').split(','),
+
+            # Alert intervals (defaults to 30 minutes if not provided)
+            'all_alert_interval': int(os.getenv('ALL_ALERT_INTERVAL', 1800)),
+            'specific_alert_interval': int(os.getenv('SPECIFIC_ALERT_INTERVAL', 1800)),
         }
 
         # Load and parse validator tag mapping
@@ -381,6 +385,10 @@ class AlertManager:
         self.logger = logger
         self.telegram_bot = None
         self.twilio_client = None
+
+        # Track the last alert time for both alert types
+        self.last_all_alert_time = 0
+        self.last_specific_alert_time = 0
         
         # Initialize Telegram and Twilio clients
         if config['telegram_token']:
@@ -388,14 +396,31 @@ class AlertManager:
         
         if all([config['twilio_sid'], config['twilio_token'], config['twilio_from']]):
             self.twilio_client = Client(config['twilio_sid'], config['twilio_token'])
-    
+
     async def send_alert(self, message: str, alert_type: str = 'both', specific: bool = False, remaining_unjail_time: Optional[int] = None):
-        """Send alert through configured channels, with specific=True for specific validator alerts"""
-        if alert_type in ['telegram', 'both'] and self.telegram_bot:
-            await self.send_telegram_alert(message, specific=specific, remaining_unjail_time=remaining_unjail_time)
+        """Send alert through configured channels with timing checks."""
+        current_time = time.time()
         
-        if alert_type in ['call', 'both'] and specific and self.twilio_client:
-            await self.make_calls(message)
+        if specific:
+            # Check if enough time has passed since the last specific alert
+            if current_time - self.last_specific_alert_time < self.config['specific_alert_interval']:
+                return  # Skip alert if interval hasn't passed
+            self.last_specific_alert_time = current_time  # Update the time for specific alerts
+            
+            if alert_type in ['telegram', 'both'] and self.telegram_bot:
+                await self.send_telegram_alert(message, specific=specific, remaining_unjail_time=remaining_unjail_time)
+            
+            if alert_type in ['call', 'both'] and self.twilio_client:
+                await self.make_calls(message)
+
+        else:
+            # Check if enough time has passed since the last all-validator alert
+            if current_time - self.last_all_alert_time < self.config['all_alert_interval']:
+                return  # Skip alert if interval hasn't passed
+            self.last_all_alert_time = current_time  # Update the time for all-validator alerts
+
+            if alert_type in ['telegram', 'both'] and self.telegram_bot:
+                await self.send_telegram_alert(message, specific=specific)
 
     async def send_telegram_alert(self, message: str, specific: bool = False, remaining_unjail_time: Optional[int] = None):
         """Send Telegram alert to specific or general chat, with optional tags"""
@@ -664,16 +689,18 @@ class TestManager:
         for test_name, status in results:
             print(f"{test_name}: {status}")
 
-async def fetch_validator_data():
+async def fetch_validator_data(logger):
     """Fetch validator data from the API, with caching to reduce calls."""
     global _last_fetched_data, _last_fetch_time
 
     # Check if we have recent data and use it if still valid
     current_time = time.time()
     if _last_fetched_data and (current_time - _last_fetch_time < CACHE_EXPIRY):
+        logger.info(f"Use catched data")
         return _last_fetched_data
 
     try:
+        logger.info(f"Fetching fresh data cached data expired.")
         response = requests.post(
             API_ENDPOINT,
             headers={'Content-Type': 'application/json'},
@@ -692,7 +719,7 @@ async def fetch_validator_data():
 async def check_all_validators(alert_manager: AlertManager):
     """Monitor all validators using cached data if available."""
     logger = logging.getLogger('all_validators')
-    validators = await fetch_validator_data()
+    validators = await fetch_validator_data(logger)
     if validators is None:
         logger.error("Failed to retrieve validator data.")
         return
@@ -731,27 +758,29 @@ async def check_all_validators(alert_manager: AlertManager):
     await alert_manager.send_alert(message, alert_type='telegram', specific=False)
     
 async def monitor_loop(args, config, monitor, alert_manager):
-    """Main monitoring loop, allowing for combined alerts and non-blocking unjail handling."""
+    """Main monitoring loop with separate API and alert intervals."""
     logger = logging.getLogger()
-    interval = args.interval or CHECK_INTERVAL
+    api_interval = args.interval or CHECK_INTERVAL
     mode = args.mode or config['monitor_type']
 
     while True:
         try:
-            # Fetch latest validator data once per loop
-            validators = await fetch_validator_data()
+            # Fetch latest validator data once per API interval
+            logger.info(f"\n\nStart fetching data")
+            validators = await fetch_validator_data(logger)
             if validators is None:
                 logger.error("Failed to retrieve validator data.")
-                await asyncio.sleep(interval)
+                await asyncio.sleep(api_interval)
                 continue
 
+            # Check specific validator status and send alert if jailed
             if mode in ['specific', 'both'] and config['validator_address']:
                 validator_info = next(
                     (v for v in validators if v['validator'].lower() == config['validator_address'].lower()),
                     None
                 )
                 if validator_info and validator_info['isJailed'] and not monitor.in_unjail_wait:
-                    # Start a separate task for the unjail process to avoid blocking the loop
+                    # Start unjail process if jailed and not waiting for unjail
                     asyncio.create_task(monitor.schedule_unjail(config['validator_address'], validator_info))
                 else:
                     pass
@@ -759,14 +788,17 @@ async def monitor_loop(args, config, monitor, alert_manager):
                     # await alert_manager.send_alert("Specific validator status update", alert_type='telegram', specific=True)
                     # await alert_manager.send_alert("All validators status update", alert_type='telegram', specific=False)
 
+
+            # Check all validators and send alert if there are jailed validators
             if mode in ['all', 'both']:
                 await check_all_validators(alert_manager)
 
-            await asyncio.sleep(interval)
+            # Sleep until the next API call
+            await asyncio.sleep(api_interval)
 
         except Exception as e:
             logger.error(f"Error in monitoring loop: {e}")
-            await asyncio.sleep(interval)
+            await asyncio.sleep(api_interval)
 
 def signal_handler(signum, frame):
     """Handle shutdown signals"""
