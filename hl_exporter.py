@@ -599,7 +599,7 @@ def update_validator_metrics():
                     break
         except Exception as e:
             logging.error(f"Error fetching validator metrics: {e}")
-        time.sleep(60)  # Fetch every 1 minutes
+        time.sleep(150)  # Fetch every 1 minutes
 
 
 if __name__ == "__main__":
