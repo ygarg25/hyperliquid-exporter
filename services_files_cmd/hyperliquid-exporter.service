@@ -1,0 +1,21 @@
+[Unit]
+Description=HyperLiquid Prometheus Exporter
+After=network.target
+
+[Service]
+# The working directory where the script is located
+WorkingDirectory=/home/dfuse/hyperliquid-exporter
+
+# Command to execute the script
+ExecStart=/home/dfuse/miniconda3/bin/python /home/dfuse/hyperliquid-exporter/hl_exporter.py
+
+# Restart the service if it crashes
+Restart=always
+RestartSec=10
+
+# Run the service as the current user
+User=dfuse
+Group=dfuse
+
+[Install]
+WantedBy=multi-user.target

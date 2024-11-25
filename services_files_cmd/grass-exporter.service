@@ -1,0 +1,14 @@
+[Unit]
+Description=Grass Exporter Service
+After=network.target
+
+[Service]
+Type=simple
+User=dfuse
+ExecStart=/home/dfuse/miniconda3/bin/python /home/dfuse/hyperliquid-exporter/grass_exporter.py
+WorkingDirectory=/home/dfuse/hyperliquid-exporter
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

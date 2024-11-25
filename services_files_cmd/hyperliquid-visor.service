@@ -1,0 +1,17 @@
+[Unit]
+Description=Hyperliquid Node Service
+After=network.target
+
+[Service]
+Type=simple
+User=dfuse
+Group=dfuse
+WorkingDirectory=/home/dfuse
+# ExecStart=/home/dfuse/hl-visor run-non-validator
+ExecStart=/home/dfuse/hl-visor run-validator  --replica-cmds-style recent-actions
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

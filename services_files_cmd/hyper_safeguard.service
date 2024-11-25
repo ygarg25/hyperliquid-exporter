@@ -1,0 +1,17 @@
+[Unit]
+Description=Hyperliquid Validator Safeguard Service
+After=network.target
+
+[Service]
+Type=simple
+User=dfuse
+Group=dfuse
+WorkingDirectory=/home/dfuse/hyperliquid-exporter
+Environment="PATH=/home/dfuse/miniconda3/bin:$PATH"
+ExecStart=/home/dfuse/miniconda3/bin/python hyperliquid_validator_safeguard.py
+Restart=always
+RestartSec=3
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

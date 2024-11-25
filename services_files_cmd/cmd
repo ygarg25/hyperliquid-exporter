@@ -1,0 +1,52 @@
+hyperliquid_visor_service
+
+sudo nano /etc/systemd/system/hyperliquid-visor.service
+sudo systemctl daemon-reload
+sudo systemctl enable hyperliquid-visor
+sudo systemctl start hyperliquid-visor
+sudo systemctl status hyperliquid-visor
+sudo systemctl restart hyperliquid-visor
+sudo systemctl stop hyperliquid-visor
+systemctl is-active hyperliquid-visor.service
+sudo journalctl -u hyperliquid-visor -f
+journalctl -u hyperliquid-visor.service --since '5 minutes ago' --no-pager | grep -iE 'error'
+
+
+
+
+hyper_safeguard.service
+
+sudo nano /etc/systemd/system/hyper_safeguard.service
+sudo systemctl daemon-reload
+sudo systemctl enable hyper_safeguard
+sudo systemctl start hyper_safeguard
+sudo systemctl restart hyper_safeguard
+sudo systemctl status hyper_safeguard
+sudo systemctl stop hyper_safeguard
+systemctl is-active hyper_safeguard.service
+sudo journalctl -u hyper_safeguard -f
+
+
+hyperliquid-exporter.service
+
+sudo nano /etc/systemd/system/hyperliquid-exporter.service
+sudo systemctl daemon-reload
+sudo systemctl enable hyperliquid-exporter
+sudo systemctl start hyperliquid-exporter
+sudo systemctl status hyperliquid-exporter
+sudo systemctl restart hyperliquid-exporter
+sudo journalctl -u hyperliquid-exporter -f
+sudo systemctl stop hyperliquid-exporter
+
+
+grass-exporter.service
+sudo nano /etc/systemd/system/grass-exporter.service
+sudo systemctl daemon-reload
+sudo systemctl enable grass-exporter.service
+sudo systemctl start grass-exporter.service
+sudo systemctl status grass-exporter.service
+sudo systemctl restart grass-exporter.service
+sudo journalctl -u grass-exporter
+sudo journalctl -u grass-exporter -f
+sudo journalctl -u grass-exporter -b
+sudo journalctl -u grass-exporter -n 100
