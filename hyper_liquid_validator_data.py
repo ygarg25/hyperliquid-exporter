@@ -240,9 +240,46 @@ class HyperLiquidAPI:
 class DataProcessor:
     """Processes and transforms validator data"""
     @staticmethod
+    def flatten_stats(stats_data: List) -> dict:
+        """Convert stats array to flattened dictionary with specific uptime metrics"""
+        flattened = {}
+        for period, data in stats_data:
+            flattened[f"{period}_uptime"] = float(data.get("uptimeFraction", "0"))
+        return flattened
+
+    @staticmethod
+    def process_validator(validator: Dict, timestamp: str) -> Dict:
+        """Process a single validator entry with specific order of fields"""
+        # Extract base fields we want to keep
+        base_data = {
+            "validator": validator.get("validator"),
+            "signer": validator.get("signer"),
+            "name": validator.get("name"),
+            "description": validator.get("description"),
+            "nRecentBlocks": validator.get("nRecentBlocks"),
+            "stake": validator.get("stake"),
+            "isJailed": validator.get("isJailed"),
+            "unjailableAfter": validator.get("unjailableAfter"),
+            "isActive": validator.get("isActive"),
+            "date_time_UTC": timestamp
+        }
+        
+        # Process stats
+        stats = validator.get('stats', [])
+        stats_dict = DataProcessor.flatten_stats(stats)
+        
+        # Combine in desired order
+        return {
+            **base_data,
+            "day_uptime": stats_dict.get("day_uptime", 0),
+            "week_uptime": stats_dict.get("week_uptime", 0),
+            "month_uptime": stats_dict.get("month_uptime", 0)
+        }
+
+    @staticmethod
     def add_timestamp(data: List[Dict], timestamp: str) -> List[Dict]:
         """Add timestamp to each data entry"""
-        return [{**item, 'date_time_UTC': timestamp} for item in data]
+        return [DataProcessor.process_validator(item, timestamp) for item in data]
     
     @staticmethod
     def filter_jailed(data: List[Dict]) -> List[Dict]:
@@ -257,8 +294,7 @@ class DataProcessor:
         if not data:
             return []
         headers = list(data[0].keys())
-        return [headers] + [list(item.values()) for item in data]
-
+        return [headers] + [[item[key] for key in headers] for item in data]
 def hyper_liquid_data_fetch(parent_dir: Path) -> None:
     """Fetch and store all validator data"""
     logger = logging.getLogger(__name__)
