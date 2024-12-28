@@ -529,12 +529,12 @@ class ValidatorMonitor:
         unjailable_after_ms = validator_info.get('unjailableAfter')
         if unjailable_after_ms <= 0:
             self.logger.error(f"Invalid `unjailableAfter` value: {unjailable_after_ms}. Falling back to default wait time.")
-            dynamic_wait_time = 60  # Fallback to default if `unjailableAfter` is missing
+            dynamic_wait_time = 180  # Fallback to default if `unjailableAfter` is missing
         else:
             unjailable_after = datetime.fromtimestamp(unjailable_after_ms / 1000, tz=timezone.utc)
             current_time = datetime.now(tz=timezone.utc)
             time_diff = (unjailable_after - current_time).total_seconds()
-            dynamic_wait_time = max(time_diff + 60, 60)  # Wait at least 1 minute beyond unjailableAfter
+            dynamic_wait_time = max(time_diff + 180, 180)  # Wait at least 1 minute beyond unjailableAfter
             
             self.logger.info(f"Calculated dynamic unjail wait time: {dynamic_wait_time // 60:.1f} minutes.")
 
@@ -565,23 +565,25 @@ class ValidatorMonitor:
                 if await self.unjail_validator(validator_name, validator_info):
                     # Successful unjail, reset the flag
                     self.logger.info(f"Successfully unjailed")
-                    self.in_unjail_wait = False
-                    self.logger.info(f"in_unjail_wait status after unjailed: {self.in_unjail_wait}")
                     success_message = f"✅ Successfully unjailed {validator_name}."
                     await self.alert_manager.send_alert(success_message, alert_type='telegram', specific=True)
+                    
+                    self.in_unjail_wait = False
+                    self.logger.info(f"in_unjail_wait status after unjailed: {self.in_unjail_wait}")
                 else:
                     failure_message = f"❌ Failed to unjail {validator_name}. Manual intervention required."
                     self.logger.error(failure_message)
+                    await self.alert_manager.send_alert(failure_message, alert_type='telegram', specific=True)
+
                     self.in_unjail_wait = False
                     self.logger.info(f"in_unjail_wait status after failed unjail: {self.in_unjail_wait}")
-                    await self.alert_manager.send_alert(failure_message, alert_type='telegram', specific=True)
             except Exception as e:
                 self.logger.error(f"Error during unjail process: {e}")
                 self.in_unjail_wait = False
 
         except Exception as e:
-            self.in_unjail_wait = False
             self.logger.error(f"Error during unjail process: {e}")
+            self.in_unjail_wait = False
         finally:
             # Ensure the flag is reset if unjail failed
             if not self.in_unjail_wait:
