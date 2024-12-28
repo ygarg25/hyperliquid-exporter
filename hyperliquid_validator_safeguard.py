@@ -245,7 +245,7 @@ import os
 import sys
 import signal
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from telegram import Bot
 from telegram.constants import ParseMode
@@ -523,6 +523,21 @@ class ValidatorMonitor:
         """Wait for UNJAIL_WAIT_TIME before attempting to unjail, avoiding duplicate unjail attempts."""
         self.in_unjail_wait = True  # Prevent duplicate unjail tasks
         self.unjail_start_time = time.time()  # Record the start time for calculating remaining time
+        self.logger.info(f"Initiate auto unjailer")
+
+        # Calculate dynamic wait time based on unjailableAfter
+        unjailable_after_ms = validator_info.get('unjailableAfter')
+        if unjailable_after_ms <= 0:
+            self.logger.error(f"Invalid `unjailableAfter` value: {unjailable_after_ms}. Falling back to default wait time.")
+            dynamic_wait_time = 60  # Fallback to default if `unjailableAfter` is missing
+        else:
+            unjailable_after = datetime.fromtimestamp(unjailable_after_ms / 1000, tz=timezone.utc)
+            current_time = datetime.now(tz=timezone.utc)
+            time_diff = (unjailable_after - current_time).total_seconds()
+            dynamic_wait_time = max(time_diff + 60, 60)  # Wait at least 1 minute beyond unjailableAfter
+            
+            self.logger.info(f"Calculated dynamic unjail wait time: {dynamic_wait_time // 60:.1f} minutes.")
+
         
         try:
             jail_message = f"🚨 Alert: Hyperliquid Node <b>{validator_info['name']}</b> has been jailed! Unjailing attempt will be made after {UNJAIL_WAIT_TIME // 60} minutes."
@@ -533,25 +548,39 @@ class ValidatorMonitor:
                 f"Recent Blocks: <code>{validator_info['nRecentBlocks']}</code>\n"
 
                 f"\n\n{jail_message}\n\n"
-                f"Time left until unjail attempt: <code>{UNJAIL_WAIT_TIME // 60} minutes</code>\n"
+                # f"Time left until unjail attempt: <code>{UNJAIL_WAIT_TIME // 60} minutes</code>\n"
+                f"Time left until unjail attempt: <code>{dynamic_wait_time // 60} minutes</code>\n"
             )
             
-            # await self.alert_manager.send_alert(jail_message, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
-            await self.alert_manager.send_alert(msg, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
+            # await self.alert_manager.send_alert(msg, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
+            await self.alert_manager.send_alert(msg, alert_type='telegram', specific=True, remaining_unjail_time=dynamic_wait_time // 60)
 
-            await asyncio.sleep(UNJAIL_WAIT_TIME)
+            # await asyncio.sleep(UNJAIL_WAIT_TIME)
+
+            self.unjail_start_time = time.time()  # Track the start time for unjailing wait
+            await asyncio.sleep(dynamic_wait_time)
             
             # Attempt to unjail the validator
-            if await self.unjail_validator(validator_name, validator_info):
-                # Successful unjail, reset the flag
+            try:
+                if await self.unjail_validator(validator_name, validator_info):
+                    # Successful unjail, reset the flag
+                    self.logger.info(f"Successfully unjailed")
+                    self.in_unjail_wait = False
+                    self.logger.info(f"in_unjail_wait status after unjailed: {self.in_unjail_wait}")
+                    success_message = f"✅ Successfully unjailed {validator_name}."
+                    await self.alert_manager.send_alert(success_message, alert_type='telegram', specific=True)
+                else:
+                    failure_message = f"❌ Failed to unjail {validator_name}. Manual intervention required."
+                    self.logger.error(failure_message)
+                    self.in_unjail_wait = False
+                    self.logger.info(f"in_unjail_wait status after failed unjail: {self.in_unjail_wait}")
+                    await self.alert_manager.send_alert(failure_message, alert_type='telegram', specific=True)
+            except Exception as e:
+                self.logger.error(f"Error during unjail process: {e}")
                 self.in_unjail_wait = False
-                success_message = f"✅ Successfully unjailed {validator_name}."
-                await self.alert_manager.send_alert(success_message, alert_type='both', specific=True)
-            else:
-                failure_message = f"❌ Failed to unjail {validator_name}. Manual intervention required."
-                await self.alert_manager.send_alert(failure_message, alert_type='both', specific=True)
 
         except Exception as e:
+            self.in_unjail_wait = False
             self.logger.error(f"Error during unjail process: {e}")
         finally:
             # Ensure the flag is reset if unjail failed
@@ -573,7 +602,7 @@ class ValidatorMonitor:
             try:
                 cmd = f'~/hl-node --chain Testnet --key {self.config["private_key"]} send-signed-action \'{{"type": "CSignerAction", "unjailSelf": null}}\''
                 self.logger.info(f"Executing unjail for {validator_name}")
-                
+
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
                 if result.stdout:
                     self.logger.info(f"Unjail output: {result.stdout}")
@@ -709,6 +738,7 @@ async def fetch_validator_data(logger):
             headers={'Content-Type': 'application/json'},
             json={"type": "validatorSummaries"}
         )
+        logger.info(f"Data fetched")
         response.raise_for_status()
         _last_fetched_data = response.json()
         _last_fetch_time = current_time
@@ -769,6 +799,7 @@ async def monitor_loop(args, config, monitor, alert_manager):
     while True:
         try:
             # Fetch latest validator data once per API interval
+            logger.info(f"\n\n")
             logger.info(f"\n\nStart fetching data")
             validators = await fetch_validator_data(logger)
             if validators is None:
@@ -777,11 +808,17 @@ async def monitor_loop(args, config, monitor, alert_manager):
                 continue
 
             # Check specific validator status and send alert if jailed
+            
             if mode in ['specific', 'both'] and config['validator_address']:
+                logger.info(f"Check For our validator jail status {config['validator_address']}")
                 validator_info = next(
                     (v for v in validators if v['validator'].lower() == config['validator_address'].lower()),
                     None
                 )
+                logger.info(f"{validator_info}")
+                logger.info(f"in_unjail_wait status: {monitor.in_unjail_wait}")
+                logger.info(f"validator jail status: {validator_info['isJailed']}")
+                
                 if validator_info and validator_info['isJailed'] and not monitor.in_unjail_wait:
                     # Start unjail process if jailed and not waiting for unjail
                     asyncio.create_task(monitor.schedule_unjail(config['validator_address'], validator_info))
