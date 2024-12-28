@@ -573,7 +573,7 @@ def update_validator_metrics():
 
             # Iterate through the validators to find the one with name "ASXN LABS"
             for validator in validator_summaries:
-                if validator['name'] == 'ASXN LABS':
+                if validator['name'] == 'ASXN':
                     # Extract the desired information
                     stake = validator['stake']
                     is_jailed = validator['isJailed']
