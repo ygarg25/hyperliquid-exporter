@@ -2,6 +2,8 @@ import requests
 import time
 from datetime import datetime, timezone
 import threading
+import signal
+import sys
 
 # Configuration for Testnet and Mainnet
 CONFIG = [
@@ -13,7 +15,7 @@ CONFIG = [
     },
     {
         "api_url": "https://api.hyperliquid.xyz/info",
-        "validator_name": "ASXN LABS",
+        "validator_name": "ASXN",
         "alert_message": "Mainnet validator is jailed!",
         "server_name": "Mainnet Server"
     }
@@ -26,6 +28,7 @@ PAYLOAD = {"type": "validatorSummaries"}
 TELEGRAM_BOT_TOKEN = ""  # Replace with your bot's token
 TELEGRAM_CHAT_ID = ""  # Replace with your chat or group ID
 
+stop_flag = threading.Event()  # Shared flag to stop threads
 
 # Function to send a Telegram message
 def send_telegram_message(message):
@@ -54,11 +57,11 @@ def fetch_validator_data(api_url):
 
 # Function to process a single server's validator
 def process_server(conf):
-    while True:
+    while not stop_flag.is_set():
         data = fetch_validator_data(conf["api_url"])
         if not data:
-            print(f"No data fetched from {conf['api_url']}, retrying in 60 seconds...")
-            time.sleep(60)
+            print(f"No data fetched from {conf['api_url']}, retrying in 300 seconds...")
+            time.sleep(300)
             continue
 
         for validator in data:
@@ -83,14 +86,23 @@ def process_server(conf):
 
                     print(f"{conf['server_name']}: Validator '{conf['validator_name']}' is jailed. "
                           f"Next check after {time_diff}.")
-                    time.sleep(max(time_diff.total_seconds(), 600))
+                    time.sleep(max(time_diff.total_seconds(), 300))
                 else:
                     print(f"{conf['server_name']}: Validator '{conf['validator_name']}' is not jailed.")
                     time.sleep(300)
 
+# Signal handler for graceful shutdown
+def signal_handler(sig, frame):
+    print("Termination signal received. Stopping threads...")
+    stop_flag.set()  # Signal all threads to stop
+    sys.exit(0)
 
 # Start monitoring
+# Start monitoring
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)  # Handle Ctrl+C
+    signal.signal(signal.SIGTERM, signal_handler)  # Handle `kill` command
+
     threads = []
     for conf in CONFIG:
         thread = threading.Thread(target=process_server, args=(conf,))
