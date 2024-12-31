@@ -517,9 +517,9 @@ def update_validator_metrics():
             response.raise_for_status()
             validator_summaries = response.json()
 
-            # Iterate through the validators to find the one with name "ASXN LABS"
+            # Iterate through the validators to find the one with name "ASXN"
             for validator in validator_summaries:
-                if validator['name'] == 'ASXN LABS':
+                if validator['name'] == 'ASXN':
                     # Extract the desired information
                     stake = validator['stake']
                     is_jailed = validator['isJailed']
@@ -537,7 +537,7 @@ def update_validator_metrics():
                     })
 
                     # Log the updated values
-                    logging.info(f"Updated metrics for ASXN LABS: "
+                    logging.info(f"Updated metrics for ASXN: "
                                  f"Stake={stake}, "
                                  f"Is Jailed={'Yes' if is_jailed else 'No'}, "
                                  f"Recent Blocks Proposed={n_recent_blocks}, "
