@@ -73,10 +73,10 @@ def monitor():
             print(delegated,type(delegated),undelegated,type(undelegated),total_pending_withdrawal,type(total_pending_withdrawal),total_pending_withdrawal)
 
             # Check thresholds and send alerts if necessary
-            if delegated < 10000:
+            if delegated < 1000:
                 send_slack_notification(f"⚠️ Alert: Hyperliquid Validator Mainnet:\nDelegated value is below 10k ({delegated}). Please review!")
 
-            if undelegated > 10000 or total_pending_withdrawal > 10000:
+            if undelegated > 1000 or total_pending_withdrawal > 1000:
                 send_slack_notification(
                     f"⚠️ Alert: Hyperliquid Validator Mainnet:\nUndelegated ({undelegated}) or Total Pending Withdrawal ({total_pending_withdrawal}) exceeds 10k. Please review!"
                 )
