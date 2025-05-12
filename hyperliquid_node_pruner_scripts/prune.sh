@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Record start time
+START_TIME=$(date "+%Y-%m-%d %H:%M:%S")
+echo "Script started at: $START_TIME"
+
 DATA_PATH="/home/dfuse/hl/data"
 
 # Define how many hours of recent data to keep
@@ -16,7 +20,8 @@ for dir in replica_cmds node_logs visor_child_stderr rate_limited_ips; do
     find "$DATA_PATH/$dir" -mindepth 1 -type d -mmin +$((HOURS_TO_KEEP*60)) -exec rm -rf {} \; 2>/dev/null || true
 done
 
-echo "Pruning completed."
+echo "Pruning completed at: $(date "+%Y-%m-%d %H:%M:%S")"
+echo "Total execution time: $(($(date +%s) - $(date -d "$START_TIME" +%s))) seconds"
 
 
 # Delete data older than 5 days.
