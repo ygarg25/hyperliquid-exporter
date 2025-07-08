@@ -265,7 +265,7 @@ _last_fetched_data = None
 _last_fetch_time = 0
 CACHE_EXPIRY = 60  # Cache data for 60 seconds
 
-API_ENDPOINT = 'https://api.hyperliquid-testnet.xyz/info'
+API_ENDPOINT = 'https://api.hyperliquid.xyz/info'
 
 # # Validator mappings for notifications
 # VALIDATOR_TAG_MAPPING = {
@@ -542,6 +542,7 @@ class ValidatorMonitor:
         try:
             jail_message = f"🚨 Alert: Hyperliquid Node <b>{validator_info['name']}</b> has been jailed! Unjailing attempt will be made after {UNJAIL_WAIT_TIME // 60} minutes."
             msg = (
+                f"<b>******MAINNET HYPERLIQUID*****</b>\n\n"
                 f"<b>{validator_info['name']} Validator Alert:</b>\n"
                 f"Is Jailed: <code>{validator_info['isJailed']}</code>\n"
                 f"Stake: <code>{validator_info['stake']}</code>\n"
@@ -553,7 +554,7 @@ class ValidatorMonitor:
             )
             
             # await self.alert_manager.send_alert(msg, alert_type='both', specific=True, remaining_unjail_time=UNJAIL_WAIT_TIME // 60)
-            await self.alert_manager.send_alert(msg, alert_type='telegram', specific=True, remaining_unjail_time=dynamic_wait_time // 60)
+            await self.alert_manager.send_alert(msg, alert_type='both', specific=True, remaining_unjail_time=dynamic_wait_time // 60)
 
             # await asyncio.sleep(UNJAIL_WAIT_TIME)
 
@@ -565,18 +566,18 @@ class ValidatorMonitor:
                 if await self.unjail_validator(validator_name, validator_info):
                     # Successful unjail, reset the flag
                     self.logger.info(f"Successfully unjailed")
-                    success_message = f"✅ Successfully unjailed {validator_name}."
-                    await self.alert_manager.send_alert(success_message, alert_type='telegram', specific=True)
+                    success_message = f"<b>******MAINNET HYPERLIQUID*****</b>\n\n✅ Successfully unjailed {validator_name}."
+                    await self.alert_manager.send_alert(success_message, alert_type='both', specific=True)
                     
                     self.in_unjail_wait = False
                     self.logger.info(f"in_unjail_wait status after unjailed: {self.in_unjail_wait}")
                 else:
-                    failure_message = f"❌ Failed to unjail {validator_name}. Manual intervention required."
+                    failure_message = f"<b>******MAINNET HYPERLIQUID*****</b>\n\n❌ Failed to unjail {validator_name}. Manual intervention required."
                     self.logger.error(failure_message)
-                    await self.alert_manager.send_alert(failure_message, alert_type='telegram', specific=True)
+                    await self.alert_manager.send_alert(failure_message, alert_type='both', specific=True)
 
                     self.in_unjail_wait = False
-                    self.logger.info(f"in_unjail_wait status after failed unjail: {self.in_unjail_wait}")
+                    self.logger.info(f"in_unjail_wait status after failed ubothnjail: {self.in_unjail_wait}")
             except Exception as e:
                 self.logger.error(f"Error during unjail process: {e}")
                 self.in_unjail_wait = False
@@ -602,7 +603,7 @@ class ValidatorMonitor:
         """Unjails the validator based on cached validator information."""
         if validator_info['isJailed']:
             try:
-                cmd = f'~/hl-node --chain Testnet --key {self.config["private_key"]} send-signed-action \'{{"type": "CSignerAction", "unjailSelf": null}}\''
+                cmd = f'~/hl-node --chain Mainnet --key {self.config["private_key"]} send-signed-action \'{{"type": "CSignerAction", "unjailSelf": null}}\''
                 self.logger.info(f"Executing unjail for {validator_name}")
 
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -654,6 +655,7 @@ class TestManager:
         """Test Telegram alerts"""
         try:
             test_message = (
+                "<b>******MAINNET HYPERLIQUID*****</b>\n\n"
                 "<b>🧪 Validator Monitor Test</b>\n"
                 "Testing Telegram alerts functionality.\n"
                 "If you see this message, Telegram alerts are working!"
@@ -831,9 +833,9 @@ async def monitor_loop(args, config, monitor, alert_manager):
                     # await alert_manager.send_alert("All validators status update", alert_type='telegram', specific=False)
 
 
-            # Check all validators and send alert if there are jailed validators
-            if mode in ['all', 'both']:
-                await check_all_validators(alert_manager)
+            # # Check all validators and send alert if there are jailed validators
+            # if mode in ['all', 'both']:
+            #     await check_all_validators(alert_manager)
 
             # Sleep until the next API call
             await asyncio.sleep(api_interval)

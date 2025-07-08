@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 
 # Slack and API Configuration
-SLACK_BOT_TOKEN = "<Slack Bearer token>"
+SLACK_TOKEN = "xoxb-your-actual-token-here"
 SLACK_CHANNEL = "#liquidation_monitor"
 API_URL = "https://api.hyperliquid.xyz/info"
 API_HEADERS = {"Content-Type": "application/json"}
