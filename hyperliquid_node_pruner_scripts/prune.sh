@@ -20,6 +20,10 @@ for dir in replica_cmds node_logs visor_child_stderr rate_limited_ips; do
     find "$DATA_PATH/$dir" -mindepth 1 -type d -mmin +$((HOURS_TO_KEEP*60)) -exec rm -rf {} \; 2>/dev/null || true
 done
 
+# Clean up tmp files older than 12 hours
+echo "Cleaning tmp files older than 12 hours..."
+find /home/dfuse/hl/tmp -type f -mmin +720 -exec rm -f {} \; && echo "Files older than 12 hours deleted."
+
 echo "Pruning completed at: $(date "+%Y-%m-%d %H:%M:%S")"
 echo "Total execution time: $(($(date +%s) - $(date -d "$START_TIME" +%s))) seconds"
 
